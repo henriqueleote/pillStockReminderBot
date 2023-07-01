@@ -48,7 +48,14 @@ def save_storage():
 # Handle the /help command
 def help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    context.bot.send_message(chat_id = chat_id, text = 'HELP, TODO')
+    context.bot.send_message(chat_id = chat_id, text = f"Help:\n"
+                                                       f"/help: Shows this menu\n"
+                                                       f"/new <pill_data>: Adds a new pill.\n"
+                                                       f"/all: Display all the pills and their details.\n"
+                                                       f"/start: Start receiving pill reminders (is on by default).\n"
+                                                       f"/stop - Stop receiving pill reminders.\n"
+                                                       f"/edit <pill_data>: Edits an existing pill.\n"
+                                                       f"/delete <pill_name>: Delete a pill by its name.")
 
 
 # Handle the /statusChange command
@@ -116,7 +123,7 @@ def newPill(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=chat_id, text="Pill added with success.")
 
     else:
-        context.bot.send_message(chat_id=chat_id, text="Wrong text syntax. Please use:\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: /new Pill, 01-01-2000, 10, 3, 2")
+        context.bot.send_message(chat_id=chat_id, text="Please use:\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: /new Pill, 01-01-2000, 10, 3, 2")
         return
 
 
@@ -169,7 +176,7 @@ def editPill(update: Update, context: CallbackContext):
 
     else:
         context.bot.send_message(chat_id=chat_id,
-                                 text="Wrong text syntax. Please use:\n/edit oldName, newName, dd-mm-yyyy, perBox, perDay, alertDays\nExample: /edit Old, New, 25-12-2024, 12, 5, 3\nEverything can be changed, but the name of the existing must be correct.")
+                                 text="Please use:\n/edit oldName, newName, dd-mm-yyyy, perBox, perDay, alertDays\nExample: /edit Old, New, 25-12-2024, 12, 5, 3\nEverything can be changed, but the name of the existing must be correct.")
         return
 
 
@@ -200,7 +207,7 @@ def deletePill(update: Update, context: CallbackContext):
             return
 
     else:
-        context.bot.send_message(chat_id=chat_id, text="Wrong text syntax. Please use:\n/delete name\nExample: /delete mypill")
+        context.bot.send_message(chat_id=chat_id, text="Please use:\n/delete name\nExample: /delete mypill")
         return
 
 
