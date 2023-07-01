@@ -177,10 +177,10 @@ def editPill(update: Update, context: CallbackContext):
 def deletePill(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
 
-    pillRemoved = False
+    pillDeleted = False
 
     if str(chat_id) not in pill_storage:
-        context.bot.send_message(chat_id=chat_id, text="No pills to remove.")
+        context.bot.send_message(chat_id=chat_id, text="No pills to delete.")
         return
 
     pillName = context.args[0]
@@ -190,12 +190,12 @@ def deletePill(update: Update, context: CallbackContext):
                 for pill_id, pill_data in data["pills"].items():
                     if pill_data['pillName'] == pillName:
                         del data["pills"][pill_id]
-                        pillRemoved = True
+                        pillDeleted = True
                         save_storage()  # Saves the JSON file
                         context.bot.send_message(chat_id=chat_id, text="Pill deleted with success.")
                         break
 
-        if not pillRemoved:
+        if not pillDeleted:
             context.bot.send_message(chat_id=chat_id, text="Pill not found to delete.")
             return
 
@@ -233,7 +233,7 @@ def showAll(update: Update, context: CallbackContext):
 
     if not pillShown:
         context.bot.send_message(chat_id=chat_id,
-                         text=f"No pills.")
+                         text=f"No pills to delete.")
 
 def calculateNotificationDate(pill_data):
     startingDate = datetime.strptime(pill_data['startingDate'], '%d-%m-%Y')
