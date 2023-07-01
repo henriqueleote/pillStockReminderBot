@@ -15,6 +15,9 @@ bot_token = config.bot_token
 # Global variables
 pill_storage = {}
 TIME = "13:00"
+ALERT_EMOJI = "\u26A0"  # Unicode for the warning sign emoji
+CHECKMARK_EMOJI = "\u2705"  # Unicode for the green checkmark emoji
+WRONG_EMOJI = "\u274C"  # Unicode for the cross mark emoji
 
 # Local storage files
 STORAGE_FILE = 'pill_storage.json'
@@ -94,20 +97,20 @@ def newPill(update: Update, context: CallbackContext):
             datetime.strptime(startingDate, '%d-%m-%Y')
         except ValueError:
             # Invalid date format, send an error message to the user
-            context.bot.send_message(chat_id=chat_id,text="Invalid date format. Please use dd-mm-yyyy.")
+            context.bot.send_message(chat_id=chat_id,text=f"{WRONG_EMOJI} Invalid date format. Please use dd-mm-yyyy. {WRONG_EMOJI}")
             return
 
         # Validate perBox and perDay as numbers
         if not perBox.isdigit() or not perDay.isdigit() or not alertDays.isdigit():
             # Invalid perBox or perDay, send an error message to the user
-            context.bot.send_message(chat_id=chat_id, text="Invalid perBox, perDay or alertDays. Please enter only numbers.")
+            context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} Invalid perBox, perDay or alertDays. Please enter only numbers. {WRONG_EMOJI}")
             return
 
         for chat_id, data in pill_storage.items():
             if "pills" in data:
                 for index, pill_data in data["pills"].items():
                     if pill_data['pillName'] == pillName:
-                        context.bot.send_message(chat_id=chat_id, text="You can't have duplicate name.")
+                        context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} You can't have a duplicate pill name. {WRONG_EMOJI}")
                         return
 
         pillID = str(uuid.uuid4())  # Generate a pillID using a unique identifier like UUID
@@ -123,7 +126,7 @@ def newPill(update: Update, context: CallbackContext):
 
         save_storage()  # Saves the JSON file
 
-        context.bot.send_message(chat_id=chat_id, text="Pill added with success.")
+        context.bot.send_message(chat_id=chat_id, text=f"{CHECKMARK_EMOJI} Pill added with success. {CHECKMARK_EMOJI}")
 
     else:
         context.bot.send_message(chat_id=chat_id, text="Please use:\n"
@@ -141,7 +144,7 @@ def editPill(update: Update, context: CallbackContext):
     pillData = update.message.text
 
     if str(chat_id) not in pill_storage:
-        context.bot.send_message(chat_id=chat_id, text="No pills to edit.")
+        context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} No pills to edit. {WRONG_EMOJI}")
         return
 
     pattern = r'^/edit\s+\w+,\s+[\w\s]+,\s+\d{2}-\d{2}-\d{4},\s+\d+,\s+\d+,\s+\d+$'
@@ -154,13 +157,13 @@ def editPill(update: Update, context: CallbackContext):
             datetime.strptime(startingDate, '%d-%m-%Y')
         except ValueError:
             # Invalid date format, send an error message to the user
-            context.bot.send_message(chat_id=chat_id, text="Invalid date format. Please use dd-mm-yyyy.")
+            context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} Invalid date format. Please use dd-mm-yyyy. {WRONG_EMOJI}")
             return
 
         # Validate perBox and perDay as numbers
         if not perBox.isdigit() or not perDay.isdigit() or not alertDays.isdigit():
             # Invalid perBox or perDay, send an error message to the user
-            context.bot.send_message(chat_id=chat_id, text="Invalid perBox, perDay or alertDays. Please enter only numbers.")
+            context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} Invalid perBox, perDay or alertDays. Please enter only numbers. {WRONG_EMOJI}")
             return
 
         pillFound = False
@@ -175,11 +178,11 @@ def editPill(update: Update, context: CallbackContext):
                         pill_data['alertDays'] = alertDays
                         pillFound = True
                         save_storage()  # Saves the JSON file
-                        context.bot.send_message(chat_id=chat_id, text="Pill edited with success.")
+                        context.bot.send_message(chat_id=chat_id, text=f"{CHECKMARK_EMOJI} Pill edited with success. {CHECKMARK_EMOJI}")
                         break
 
         if not pillFound:
-            context.bot.send_message(chat_id=chat_id, text="Pill not found to edit.")
+            context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} Pill not found to edit. {WRONG_EMOJI}")
             return
 
     else:
@@ -201,7 +204,7 @@ def deletePill(update: Update, context: CallbackContext):
     pillDeleted = False
 
     if str(chat_id) not in pill_storage:
-        context.bot.send_message(chat_id=chat_id, text="No pills to delete.")
+        context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} No pills to delete. {WRONG_EMOJI}")
         return
 
     pillName = context.args[0]
@@ -213,11 +216,11 @@ def deletePill(update: Update, context: CallbackContext):
                         del data["pills"][pill_id]
                         pillDeleted = True
                         save_storage()  # Saves the JSON file
-                        context.bot.send_message(chat_id=chat_id, text="Pill deleted with success.")
+                        context.bot.send_message(chat_id=chat_id, text=f"{CHECKMARK_EMOJI} Pill deleted with success. {CHECKMARK_EMOJI}")
                         break
 
         if not pillDeleted:
-            context.bot.send_message(chat_id=chat_id, text="Pill not found to delete.")
+            context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} Pill not found to delete. {WRONG_EMOJI}")
             return
 
     else:
@@ -234,7 +237,7 @@ def checkStock(bot):
             if "pills" in data:
                 for index, pill_data in data["pills"].items():
                     if calculateNotificationDate(pill_data)[0]:
-                        bot.send_message(chat_id=chat_id, text=f"You need to restock {pill_data['pillName']}, stock ends in {pill_data['alertDays']} days.")
+                        bot.send_message(chat_id=chat_id, text=f"{ALERT_EMOJI} You need to restock {pill_data['pillName']}, stock ends in {pill_data['alertDays']} days. {ALERT_EMOJI}")
 
 
 # Handle the /help command
@@ -256,7 +259,7 @@ def showAll(update: Update, context: CallbackContext):
 
     if not pillShown:
         context.bot.send_message(chat_id=chat_id,
-                         text=f"No pills to delete.")
+                         text=f"{WRONG_EMOJI} No pills to delete. {WRONG_EMOJI}")
 
 def calculateNotificationDate(pill_data):
     startingDate = datetime.strptime(pill_data['startingDate'], '%d-%m-%Y')
