@@ -40,6 +40,12 @@ Here's an example of how you can interact with the bot:
 4. Edit a pill: `/edit Pill A, Pill B, 10-02-2023, 20, 3, 5`
 5. Delete a pill: `/delete Pill B`
 
+
+## Autors
+
+- [@henriqueleote](https://www.github.com/henriqueleote)
+
+
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more information.
