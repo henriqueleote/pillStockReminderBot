@@ -49,7 +49,7 @@ def save_storage():
 # Handle the /help command
 def help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    context.bot.send_message(chat_id = chat_id, text = f"Help:\n"
+    context.bot.send_message(chat_id = chat_id, text = f"Welcome to the Pill Reminder, this is a Telegram bot coded by Henrique Leote in Python that alerts you on near stock shortage of pills, so that you never run out of.\n\n"
                                                        f"/help: Shows this menu\n"
                                                        f"/new <pill_data>: Adds a new pill.\n"
                                                        f"/all: Display all the pills and their details.\n"
