@@ -123,7 +123,12 @@ def newPill(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=chat_id, text="Pill added with success.")
 
     else:
-        context.bot.send_message(chat_id=chat_id, text="Please use:\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: /new Pill, 01-01-2000, 10, 3, 2")
+        context.bot.send_message(chat_id=chat_id, text="Please use:\n"
+                                                       "/new name, dd-mm-yyyy, perBox, perDay, alertDays\n"
+                                                       "perBox: Number of pills per box\n"
+                                                       "perDay: Number of pills you take per day\n"
+                                                       "alertDays: Number of days in advance to be alerted to restock\n"
+                                                       "Example: /new Pill, 01-01-2000, 10, 3, 2")
         return
 
 
@@ -176,7 +181,13 @@ def editPill(update: Update, context: CallbackContext):
 
     else:
         context.bot.send_message(chat_id=chat_id,
-                                 text="Please use:\n/edit oldName, newName, dd-mm-yyyy, perBox, perDay, alertDays\nExample: /edit Old, New, 25-12-2024, 12, 5, 3\nEverything can be changed, but the name of the existing must be correct.")
+                                 text="Please use:\n"
+                                      "/edit oldName, newName, dd-mm-yyyy, perBox, perDay, alertDays\n"
+                                      "perBox: Number of pills per box\n"
+                                      "perDay: Number of pills you take per day\n"
+                                      "alertDays: Number of days in advance to be alerted to restock\n"
+                                      "Example: /edit Old, New, 25-12-2024, 12, 5, 3\n"
+                                      "Everything can be changed, but the name of the existing must be correct.")
         return
 
 
@@ -207,7 +218,9 @@ def deletePill(update: Update, context: CallbackContext):
             return
 
     else:
-        context.bot.send_message(chat_id=chat_id, text="Please use:\n/delete name\nExample: /delete mypill")
+        context.bot.send_message(chat_id=chat_id, text="Please use:\n"
+                                                       "/delete name\n"
+                                                       "Example: /delete mypill")
         return
 
 
