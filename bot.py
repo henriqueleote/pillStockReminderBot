@@ -2,7 +2,6 @@ import re
 import time
 import uuid
 import schedule as schedule
-from apscheduler.schedulers.background import BackgroundScheduler
 
 import config
 import json
@@ -57,10 +56,10 @@ def statusChange(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     if str(chat_id) in pill_storage:
         pill_storage[str(chat_id)]['status'] = 'running' if pill_storage[str(chat_id)]['status'] == 'stopped' else 'stopped'
-        context.bot.send_message(chat_id=chat_id, text='Reminders have been updated')
+        context.bot.send_message(chat_id=chat_id, text='Reminders have been updated.')
         save_storage()
     else:
-        context.bot.send_message(chat_id=chat_id, text='Since you are new, use /help to check the command /new to start')
+        context.bot.send_message(chat_id=chat_id, text='Since you are new, use /help to check the command /new to start.')
 
 
 # Handle the /new <text> command
@@ -114,10 +113,10 @@ def newPill(update: Update, context: CallbackContext):
 
         save_storage()  # Saves the JSON file
 
-        context.bot.send_message(chat_id=chat_id, text="Pill added with success")
+        context.bot.send_message(chat_id=chat_id, text="Pill added with success.")
 
     else:
-        context.bot.send_message(chat_id=chat_id, text="Wrong text syntax. Please use\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: Pill, 01-01-2000, 10, 3, 2")
+        context.bot.send_message(chat_id=chat_id, text="Wrong text syntax. Please use:\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: /new Pill, 01-01-2000, 10, 3, 2")
         return
 
 
@@ -127,7 +126,7 @@ def editPill(update: Update, context: CallbackContext):
     pillData = update.message.text
 
     if str(chat_id) not in pill_storage:
-        context.bot.send_message(chat_id=chat_id, text="No pills to edit")
+        context.bot.send_message(chat_id=chat_id, text="No pills to edit.")
         return
 
     pattern = r'^/edit\s+\w+,\s+[\w\s]+,\s+\d{2}-\d{2}-\d{4},\s+\d+,\s+\d+,\s+\d+$'
@@ -161,16 +160,49 @@ def editPill(update: Update, context: CallbackContext):
                         pill_data['alertDays'] = alertDays
                         pillFound = True
                         save_storage()  # Saves the JSON file
-                        context.bot.send_message(chat_id=chat_id, text="Pill edited with success")
+                        context.bot.send_message(chat_id=chat_id, text="Pill edited with success.")
                         break
 
         if not pillFound:
-            context.bot.send_message(chat_id=chat_id, text="Pill not found for editing")
+            context.bot.send_message(chat_id=chat_id, text="Pill not found to edit.")
+            return
 
     else:
         context.bot.send_message(chat_id=chat_id,
-                                 text="Wrong text syntax. Please use\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: Pill, 01-01-2000, 10, 3, 2")
+                                 text="Wrong text syntax. Please use:\n/edit oldName, newName, dd-mm-yyyy, perBox, perDay, alertDays\nExample: /edit Old, New, 25-12-2024, 12, 5, 3\nEverything can be changed, but the name of the existing must be correct.")
         return
+
+
+# Handle the /delete <text> command
+def deletePill(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+
+    pillRemoved = False
+
+    if str(chat_id) not in pill_storage:
+        context.bot.send_message(chat_id=chat_id, text="No pills to remove.")
+        return
+
+    pillName = context.args[0]
+    if pillName.strip():
+        for chat_id, data in pill_storage.items():
+            if "pills" in data:
+                for pill_id, pill_data in data["pills"].items():
+                    if pill_data['pillName'] == pillName:
+                        del data["pills"][pill_id]
+                        pillRemoved = True
+                        save_storage()  # Saves the JSON file
+                        context.bot.send_message(chat_id=chat_id, text="Pill deleted with success.")
+                        break
+
+        if not pillRemoved:
+            context.bot.send_message(chat_id=chat_id, text="Pill not found to delete.")
+            return
+
+    else:
+        context.bot.send_message(chat_id=chat_id, text="Wrong text syntax. Please use:\n/delete name\nExample: /delete mypill")
+        return
+
 
 def checkStock(bot):
     print("checking")
@@ -179,16 +211,19 @@ def checkStock(bot):
             if "pills" in data:
                 for index, pill_data in data["pills"].items():
                     if calculateNotificationDate(pill_data)[0]:
-                        bot.send_message(chat_id=chat_id, text=f"You need to restock {pill_data['pillName']}, stock ends in {pill_data['alertDays']} days")
+                        bot.send_message(chat_id=chat_id, text=f"You need to restock {pill_data['pillName']}, stock ends in {pill_data['alertDays']} days.")
 
 
 # Handle the /help command
 def showAll(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
+
+    pillShown = False
     if str(chat_id) in pill_storage:
         for chat_id, data in pill_storage.items():
             if "pills" in data:
                 for index, pill_data in data["pills"].items():
+                    pillShown = True
                     context.bot.send_message(chat_id=chat_id, text=f""
                                                                    f"Name: {pill_data['pillName']}\n"
                                                                    f"Pill per day: {pill_data['perDay']}\n"
@@ -196,6 +231,9 @@ def showAll(update: Update, context: CallbackContext):
                                                                    f"Starting date: {pill_data['startingDate']}\n"
                                                                    f"Last pill date: {calculateNotificationDate(pill_data)[1]}\n")
 
+    if not pillShown:
+        context.bot.send_message(chat_id=chat_id,
+                         text=f"No pills.")
 
 def calculateNotificationDate(pill_data):
     startingDate = datetime.strptime(pill_data['startingDate'], '%d-%m-%Y')
@@ -230,7 +268,7 @@ def main():
     dispatcher.add_handler(CommandHandler('start', statusChange))
     dispatcher.add_handler(CommandHandler('stop', statusChange))
     dispatcher.add_handler(CommandHandler('edit', editPill))
-    dispatcher.add_handler(CommandHandler('delete', statusChange))
+    dispatcher.add_handler(CommandHandler('delete', deletePill))
 
     schedule.every().day.at("13:00").do(lambda: checkStock(updater.bot))
     updater.start_polling()  # Start the bot
