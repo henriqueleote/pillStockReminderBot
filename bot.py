@@ -1,12 +1,14 @@
 import re
+import time
 import uuid
 import schedule as schedule
+from apscheduler.schedulers.background import BackgroundScheduler
 
 import config
 import json
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from telegram import Update, Chat, Message
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 # Telegram bot token
 bot_token = config.bot_token
@@ -49,6 +51,16 @@ def help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     context.bot.send_message(chat_id = chat_id, text = 'HELP, TODO')
 
+
+# Handle the /statusChange command
+def statusChange(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    if str(chat_id) in pill_storage:
+        pill_storage[str(chat_id)]['status'] = 'running' if pill_storage[str(chat_id)]['status'] == 'stopped' else 'stopped'
+        context.bot.send_message(chat_id=chat_id, text='Reminders have been updated')
+        save_storage()
+    else:
+        context.bot.send_message(chat_id=chat_id, text='Since you are new, use /help to check the command /new to start')
 
 # Handle the /new <text> command
 def newPill(update: Update, context: CallbackContext):
@@ -105,11 +117,12 @@ def addPill(context, chat_id, pillName, startingDate, perBox, perDay, alertDays)
     context.bot.send_message(chat_id=chat_id,text="Pill added with success")
 
 def checkStock(bot):
+    print("checking")
     for chat_id, data in pill_storage.items():
         if "status" in data and data["status"] == "running":
             if "pills" in data:
                 for index, pill_data in data["pills"].items():
-                    if datetime.now().date() == calculateNotificationDate(pill_data):
+                    if calculateNotificationDate(pill_data)[0]:
                         bot.send_message(chat_id=chat_id, text=f"You need to restock {pill_data['pillName']}, stock ends in {pill_data['alertDays']} days")
 
 
@@ -124,7 +137,8 @@ def showAll(update: Update, context: CallbackContext):
                                                                    f"Name: {pill_data['pillName']}\n"
                                                                    f"Pill per day: {pill_data['perDay']}\n"
                                                                    f"Pills per box: {pill_data['perBox']}\n"
-                                                                   f"Last pill date: {(calculateNotificationDate(pill_data) + timedelta(days=int(pill_data['alertDays'])))}\n")
+                                                                   f"Starting date: {pill_data['startingDate']}\n"
+                                                                   f"Last pill date: {calculateNotificationDate(pill_data)[1]}\n")
 
 
 def calculateNotificationDate(pill_data):
@@ -136,12 +150,12 @@ def calculateNotificationDate(pill_data):
     # Calculate end date
     last_pill_date = startingDate + timedelta(days=(perDay / perBox) - 1)
 
+    days_until_last = (last_pill_date - datetime.today()).days + 1
+
     # Calculate notification date
     notification_date = last_pill_date - timedelta(days=alertDays)
 
-    print(notification_date)
-
-    return notification_date.date()
+    return [days_until_last <= alertDays, last_pill_date.date().strftime('%d-%m-%Y')]
 
 # Main method
 def main():
@@ -165,34 +179,19 @@ def main():
     dispatcher.add_handler(CommandHandler('help', help))
     dispatcher.add_handler(CommandHandler('new', newPill))
     dispatcher.add_handler(CommandHandler('all', showAll))
+    dispatcher.add_handler(CommandHandler('start', statusChange))
+    dispatcher.add_handler(CommandHandler('stop', statusChange))
 
-    #while True:
-        #schedule.every().day.at("12:00").do(lambda: checkStock(updater.bot))
+    schedule.every().day.at("13:00").do(lambda: checkStock(updater.bot))
+    updater.start_polling()  # Start the bot
 
-    checkStock(updater.bot)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
-    updater.start_polling() # Start the bot
-
-    # Alert all users the bot is running
-    #for chat_id in user_settings.keys():
-    #    updater.bot.send_message(chat_id=chat_id, text='The bot has restarted.\nPlease /run to continue getting updates')
-
-    updater.idle()
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
