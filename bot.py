@@ -92,6 +92,15 @@ def newPill(update: Update, context: CallbackContext):
             # Invalid perBox or perDay, send an error message to the user
             context.bot.send_message(chat_id=chat_id, text="Invalid perBox, perDay or alertDays. Please enter only numbers.")
             return
+
+        for chat_id, data in pill_storage.items():
+            if "pills" in data:
+                for index, pill_data in data["pills"].items():
+                    if pill_data['pillName'] == pillName:
+                        context.bot.send_message(chat_id=chat_id,
+                                                 text="You can't have duplicate name.")
+                        return
+
     else:
         context.bot.send_message(chat_id=chat_id, text="Wrong text syntax. Please use\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: Pill, 01-01-2000, 10, 3, 2")
         return
