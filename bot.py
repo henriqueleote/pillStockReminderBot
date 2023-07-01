@@ -57,7 +57,8 @@ def help(update: Update, context: CallbackContext):
                                                        f"/stop - Stop receiving pill reminders.\n"
                                                        f"/edit <pill_data>: Edits an existing pill.\n"
                                                        f"/delete <pill_name>: Delete a pill by its name.\n"
-                                                       f"The stock is checked every day at {TIME} - Austrian Time")
+                                                       f"The stock is checked every day at {TIME} - Austrian Time.\n"
+                                                       f"If the bot doesn't respond to a command, it's because it's offline at the moment.")
 
 
 # Handle the /statusChange command
@@ -68,7 +69,7 @@ def statusChange(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=chat_id, text='Reminders have been updated.')
         save_storage()
     else:
-        context.bot.send_message(chat_id=chat_id, text='Since you are new, use /help to check the command /new to start.')
+        context.bot.send_message(chat_id=chat_id, text='Since you are new, use /help to start.')
 
 
 # Handle the /new <text> command
