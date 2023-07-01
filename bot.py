@@ -62,10 +62,12 @@ def statusChange(update: Update, context: CallbackContext):
     else:
         context.bot.send_message(chat_id=chat_id, text='Since you are new, use /help to check the command /new to start')
 
+
 # Handle the /new <text> command
 def newPill(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     pillData = update.message.text
+
     if str(chat_id) not in pill_storage:
         pill_storage[str(chat_id)] = {
             'pills': {},
@@ -74,7 +76,6 @@ def newPill(update: Update, context: CallbackContext):
         save_storage()
 
     pattern = r'^/new\s+[\w\s]+,\s+\d{2}-\d{2}-\d{4},\s+\d+,\s+\d+,\s+\d+$'
-
 
     if re.match(pattern, pillData):
         pillName, startingDate, perBox, perDay, alertDays = map(str.strip, pillData[4:].split(','))
@@ -97,33 +98,79 @@ def newPill(update: Update, context: CallbackContext):
             if "pills" in data:
                 for index, pill_data in data["pills"].items():
                     if pill_data['pillName'] == pillName:
-                        context.bot.send_message(chat_id=chat_id,
-                                                 text="You can't have duplicate name.")
+                        context.bot.send_message(chat_id=chat_id, text="You can't have duplicate name.")
                         return
+
+        pillID = str(uuid.uuid4())  # Generate a pillID using a unique identifier like UUID
+
+        # Create the pill entry using the pillID as the key
+        pill_storage[str(chat_id)]['pills'][pillID] = {
+            'pillName': pillName,
+            'startingDate': startingDate,
+            'perBox': perBox,
+            'perDay': perDay,
+            'alertDays': alertDays
+        }
+
+        save_storage()  # Saves the JSON file
+
+        context.bot.send_message(chat_id=chat_id, text="Pill added with success")
 
     else:
         context.bot.send_message(chat_id=chat_id, text="Wrong text syntax. Please use\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: Pill, 01-01-2000, 10, 3, 2")
         return
 
-    addPill(context, chat_id, pillName, startingDate, perBox, perDay, alertDays)
 
+# Handle the /edit <text> command
+def editPill(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    pillData = update.message.text
 
-def addPill(context, chat_id, pillName, startingDate, perBox, perDay, alertDays):
+    if str(chat_id) not in pill_storage:
+        context.bot.send_message(chat_id=chat_id, text="No pills to edit")
+        return
 
-    pillID = str(uuid.uuid4())  # Generate a pillID using a unique identifier like UUID
+    pattern = r'^/edit\s+\w+,\s+[\w\s]+,\s+\d{2}-\d{2}-\d{4},\s+\d+,\s+\d+,\s+\d+$'
 
-    # Create the pill entry using the pillID as the key
-    pill_storage[str(chat_id)]['pills'][pillID] = {
-        'pillName': pillName,
-        'startingDate': startingDate,
-        'perBox': perBox,
-        'perDay': perDay,
-        'alertDays': alertDays
-    }
+    if re.match(pattern, pillData):
+        pillToEdit, pillName, startingDate, perBox, perDay, alertDays = map(str.strip, pillData[5:].split(','))
 
-    save_storage()  # Saves the JSON file
+        # Validate pill_date as a valid date
+        try:
+            datetime.strptime(startingDate, '%d-%m-%Y')
+        except ValueError:
+            # Invalid date format, send an error message to the user
+            context.bot.send_message(chat_id=chat_id, text="Invalid date format. Please use dd-mm-yyyy.")
+            return
 
-    context.bot.send_message(chat_id=chat_id,text="Pill added with success")
+        # Validate perBox and perDay as numbers
+        if not perBox.isdigit() or not perDay.isdigit() or not alertDays.isdigit():
+            # Invalid perBox or perDay, send an error message to the user
+            context.bot.send_message(chat_id=chat_id, text="Invalid perBox, perDay or alertDays. Please enter only numbers.")
+            return
+
+        pillFound = False
+        for chat_id, data in pill_storage.items():
+            if "pills" in data:
+                for index, pill_data in data["pills"].items():
+                    if pill_data['pillName'] == pillToEdit:
+                        pill_data['pillName'] = pillName
+                        pill_data['startingData'] = startingDate
+                        pill_data['perBox'] = perBox
+                        pill_data['perDay'] = perDay
+                        pill_data['alertDays'] = alertDays
+                        pillFound = True
+                        save_storage()  # Saves the JSON file
+                        context.bot.send_message(chat_id=chat_id, text="Pill edited with success")
+                        break
+
+        if not pillFound:
+            context.bot.send_message(chat_id=chat_id, text="Pill not found for editing")
+
+    else:
+        context.bot.send_message(chat_id=chat_id,
+                                 text="Wrong text syntax. Please use\n/new name, dd-mm-yyyy, perBox, perDay, alertDays\nExample: Pill, 01-01-2000, 10, 3, 2")
+        return
 
 def checkStock(bot):
     print("checking")
@@ -161,10 +208,8 @@ def calculateNotificationDate(pill_data):
 
     days_until_last = (last_pill_date - datetime.today()).days + 1
 
-    # Calculate notification date
-    notification_date = last_pill_date - timedelta(days=alertDays)
-
     return [days_until_last <= alertDays, last_pill_date.date().strftime('%d-%m-%Y')]
+
 
 # Main method
 def main():
@@ -172,13 +217,7 @@ def main():
 
     load_storage()  # Loads from JSON file
 
-    #Stop the messaging for every user
-    #for user_id, pill_user in pill_storage.items():
-    #    pill_user["status"] = "stopped"
-
-
     save_storage()  # Saves the JSON file
-
 
     # Initialize the bot
     updater = Updater(bot_token, use_context=True)
@@ -190,6 +229,8 @@ def main():
     dispatcher.add_handler(CommandHandler('all', showAll))
     dispatcher.add_handler(CommandHandler('start', statusChange))
     dispatcher.add_handler(CommandHandler('stop', statusChange))
+    dispatcher.add_handler(CommandHandler('edit', editPill))
+    dispatcher.add_handler(CommandHandler('delete', statusChange))
 
     schedule.every().day.at("13:00").do(lambda: checkStock(updater.bot))
     updater.start_polling()  # Start the bot
