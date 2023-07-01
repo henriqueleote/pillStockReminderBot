@@ -14,6 +14,7 @@ bot_token = config.bot_token
 
 # Global variables
 pill_storage = {}
+TIME = "13:00"
 
 # Local storage files
 STORAGE_FILE = 'pill_storage.json'
@@ -55,7 +56,8 @@ def help(update: Update, context: CallbackContext):
                                                        f"/start: Start receiving pill reminders (is on by default).\n"
                                                        f"/stop - Stop receiving pill reminders.\n"
                                                        f"/edit <pill_data>: Edits an existing pill.\n"
-                                                       f"/delete <pill_name>: Delete a pill by its name.")
+                                                       f"/delete <pill_name>: Delete a pill by its name.\n"
+                                                       f"The stock is checked every day at {TIME} - Austrian Time")
 
 
 # Handle the /statusChange command
@@ -290,7 +292,7 @@ def main():
     dispatcher.add_handler(CommandHandler('edit', editPill))
     dispatcher.add_handler(CommandHandler('delete', deletePill))
 
-    schedule.every().day.at("13:00").do(lambda: checkStock(updater.bot))
+    schedule.every().day.at(TIME).do(lambda: checkStock(updater.bot))
     updater.start_polling()  # Start the bot
 
     while True:
