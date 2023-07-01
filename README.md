@@ -1,6 +1,6 @@
 # Pill Reminder Bot
 
-This Telegram bot helps you manage your pill reminders. You can add, edit, and delete pills, as well as view the pill information.
+Pill Reminder Bot is a Telegram bot that helps you manage your medication schedule and sends reminders for pill refills. With this bot, you can easily set up pill reminders, track your medication intake, and receive notifications when it's time to restock your pills.
 
 ## Getting Started
 
@@ -8,6 +8,15 @@ This Telegram bot helps you manage your pill reminders. You can add, edit, and d
 2. Install the required dependencies: `pip install -r requirements.txt`
 3. Create a new Telegram bot and obtain the bot token.
 4. Update the `config.py` file with your bot token.
+
+## Features
+
+- Create new pill entries with customizable details such as pill name, starting date, pills per box, pills per day, and alert days.
+- Edit existing pill entries to update information such as pill name, starting date, pills per box, pills per day, and alert days.
+- Delete unwanted pill entries from your list.
+- Check the status of your pill reminders.
+- Get notifications when it's time to restock your pills based on the configured alert days.
+- View all your pill entries with their respective details.
 
 ## Usage
 
@@ -31,3 +40,10 @@ Here's an example of how you can interact with the bot:
 4. Edit a pill: `/edit Pill A, Pill B, 10-02-2023, 20, 3, 5`
 5. Delete a pill: `/delete Pill B`
 
+## Contributing
+
+Contributions are welcome! If you'd like to contribute to Pill Reminder Bot, please follow the guidelines in the CONTRIBUTING.md file.
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for more information.
