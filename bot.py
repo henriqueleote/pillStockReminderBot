@@ -240,6 +240,7 @@ def checkStock(bot):
                         bot.send_message(chat_id=chat_id, text=f"{ALERT_EMOJI} You need to restock {pill_data['pillName']}, stock ends in {pill_data['alertDays']} days. {ALERT_EMOJI}")
 
 
+# TODO - Fix the foreach, its sending to all users, missing ['chatid']. Probably have to update/fix all foreach.
 # Handle the /help command
 def showAll(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
