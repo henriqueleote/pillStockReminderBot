@@ -106,7 +106,8 @@ def newPill(update: Update, context: CallbackContext):
             context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} Invalid perBox, perDay or alertDays. Please enter only numbers. {WRONG_EMOJI}")
             return
 
-        for chat_id, data in pill_storage.items():
+        if str(chat_id) in pill_storage:
+            data = pill_storage[str(chat_id)]
             if "pills" in data:
                 for index, pill_data in data["pills"].items():
                     if pill_data['pillName'] == pillName:
@@ -123,6 +124,7 @@ def newPill(update: Update, context: CallbackContext):
             'perDay': perDay,
             'alertDays': alertDays
         }
+        pill_storage[str(chat_id)]['status'] = "running"
 
         save_storage()  # Saves the JSON file
 
@@ -167,19 +169,44 @@ def editPill(update: Update, context: CallbackContext):
             return
 
         pillFound = False
-        for chat_id, data in pill_storage.items():
-            if "pills" in data:
-                for index, pill_data in data["pills"].items():
-                    if pill_data['pillName'] == pillToEdit:
-                        pill_data['pillName'] = pillName
-                        pill_data['startingData'] = startingDate
-                        pill_data['perBox'] = perBox
-                        pill_data['perDay'] = perDay
-                        pill_data['alertDays'] = alertDays
-                        pillFound = True
-                        save_storage()  # Saves the JSON file
-                        context.bot.send_message(chat_id=chat_id, text=f"{CHECKMARK_EMOJI} Pill edited with success. {CHECKMARK_EMOJI}")
-                        break
+        goodToEdit = False
+
+        if(pillName == pillToEdit):
+            goodToEdit = True
+        else:
+            if str(chat_id) in pill_storage:
+                data = pill_storage[str(chat_id)]
+                if "pills" in data:
+                    pills_data = data["pills"]
+                    for pill_id, pill_data in pills_data.items():
+                        if pill_data['pillName'] == pillName:
+                            goodToEdit = False
+                            context.bot.send_message(chat_id=chat_id,
+                                                     text=f"{WRONG_EMOJI} You can't have a duplicate pill name. {WRONG_EMOJI}")
+                            return
+
+        if goodToEdit:
+            if str(chat_id) in pill_storage:
+                data = pill_storage[str(chat_id)]
+                if "pills" in data:
+                    pills_data = data["pills"]
+                    for pill_id, pill_data in pills_data.items():
+                        if pill_data['pillName'] == pillToEdit:
+                            id = pill_id
+            # Update the pill data
+            pill_data = {
+                'pillName': pillName,
+                'startingDate': startingDate,
+                'perBox': perBox,
+                'perDay': perDay,
+                'alertDays': alertDays
+            }
+            pills_data[id] = pill_data
+            save_storage()  # Saves the JSON file
+            context.bot.send_message(chat_id=chat_id,
+                                     text=f"{CHECKMARK_EMOJI} Pill edited successfully. {CHECKMARK_EMOJI}")
+            pillFound = True
+
 
         if not pillFound:
             context.bot.send_message(chat_id=chat_id, text=f"{WRONG_EMOJI} Pill not found to edit. {WRONG_EMOJI}")
@@ -209,9 +236,11 @@ def deletePill(update: Update, context: CallbackContext):
 
     pillName = context.args[0]
     if pillName.strip():
-        for chat_id, data in pill_storage.items():
+        if str(chat_id) in pill_storage:
+            data = pill_storage[str(chat_id)]
             if "pills" in data:
-                for pill_id, pill_data in data["pills"].items():
+                pills_data = data["pills"]
+                for pill_id, pill_data in pills_data.items():
                     if pill_data['pillName'] == pillName:
                         del data["pills"][pill_id]
                         pillDeleted = True
@@ -237,30 +266,30 @@ def checkStock(bot):
             if "pills" in data:
                 for index, pill_data in data["pills"].items():
                     if calculateNotificationDate(pill_data)[0]:
-                        bot.send_message(chat_id=chat_id, text=f"{ALERT_EMOJI} You need to restock {pill_data['pillName']}, stock ends in {pill_data['alertDays']} days. {ALERT_EMOJI}")
+                        bot.send_message(chat_id=chat_id, text=f"{ALERT_EMOJI} You need to restock {pill_data['pillName']}, stock ends in {calculateNotificationDate(pill_data)[2]} days. {ALERT_EMOJI}")
 
 
-# TODO - Fix the foreach, its sending to all users, missing ['chatid']. Probably have to update/fix all foreach.
 # Handle the /help command
 def showAll(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
 
     pillShown = False
     if str(chat_id) in pill_storage:
-        for chat_id, data in pill_storage.items():
-            if "pills" in data:
-                for index, pill_data in data["pills"].items():
-                    pillShown = True
-                    context.bot.send_message(chat_id=chat_id, text=f""
-                                                                   f"Name: {pill_data['pillName']}\n"
-                                                                   f"Pill per day: {pill_data['perDay']}\n"
-                                                                   f"Pills per box: {pill_data['perBox']}\n"
-                                                                   f"Starting date: {pill_data['startingDate']}\n"
-                                                                   f"Last pill date: {calculateNotificationDate(pill_data)[1]}\n")
+        data = pill_storage[str(chat_id)]
+        if "pills" in data:
+            for index, pill_data in data["pills"].items():
+                pillShown = True
+                context.bot.send_message(chat_id=chat_id, text=f""
+                                                               f"Name: {pill_data['pillName']}\n"
+                                                               f"Pill per day: {pill_data['perDay']}\n"
+                                                               f"Pills per box: {pill_data['perBox']}\n"
+                                                               f"Starting date: {pill_data['startingDate']}\n"
+                                                               f"Last pill date: {calculateNotificationDate(pill_data)[1]}\n")
 
     if not pillShown:
         context.bot.send_message(chat_id=chat_id,
                          text=f"{WRONG_EMOJI} No pills to delete. {WRONG_EMOJI}")
+        return
 
 def calculateNotificationDate(pill_data):
     startingDate = datetime.strptime(pill_data['startingDate'], '%d-%m-%Y')
@@ -273,7 +302,10 @@ def calculateNotificationDate(pill_data):
 
     days_until_last = (last_pill_date - datetime.today()).days + 1
 
-    return [days_until_last <= alertDays, last_pill_date.date().strftime('%d-%m-%Y')]
+    if days_until_last <= 0:
+        days_until_last = 0
+
+    return [days_until_last <= alertDays, last_pill_date.date().strftime('%d-%m-%Y'), days_until_last]
 
 
 # Main method
@@ -281,8 +313,6 @@ def main():
     print("running")
 
     load_storage()  # Loads from JSON file
-
-    save_storage()  # Saves the JSON file
 
     # Initialize the bot
     updater = Updater(bot_token, use_context=True)
@@ -299,7 +329,6 @@ def main():
 
     schedule.every().day.at(TIME).do(lambda: checkStock(updater.bot))
     updater.start_polling()  # Start the bot
-
     while True:
         schedule.run_pending()
         time.sleep(1)
