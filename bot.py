@@ -288,7 +288,7 @@ def showAll(update: Update, context: CallbackContext):
 
     if not pillShown:
         context.bot.send_message(chat_id=chat_id,
-                         text=f"{WRONG_EMOJI} No pills to delete. {WRONG_EMOJI}")
+                         text=f"{WRONG_EMOJI} No pills to show. {WRONG_EMOJI}")
         return
 
 def calculateNotificationDate(pill_data):
